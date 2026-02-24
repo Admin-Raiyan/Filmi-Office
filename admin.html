@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Filmi Office</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="antialiased">
+
+    <main id="app-content" class="min-h-screen">
+        
+        <!-- Login Page -->
+        <div id="view-login" class="page-view flex items-center justify-center min-h-[90vh] px-4">
+            <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md">
+                <div class="text-center mb-8">
+                    <i class="fas fa-user-shield text-4xl text-red-500 mb-3"></i>
+                    <h2 class="text-2xl font-bold">Admin Login</h2>
+                    <p class="text-gray-500 text-sm mt-2">Enter admin email and password</p>
+                </div>
+                <input type="email" id="admin-email" placeholder="Email (e.g. admin@filmioffice.com)" class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:border-red-500 outline-none mb-4">
+                <input type="password" id="admin-pass" placeholder="Password" class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:border-red-500 outline-none mb-6">
+                <button onclick="loginAdmin()" class="w-full bg-red-600 hover:bg-red-700 p-3 rounded-lg font-bold shadow-lg">Login to Dashboard</button>
+                <a href="index.html" class="block text-center w-full mt-4 text-gray-500 text-sm">Back to Website</a>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="view-dashboard" class="page-view hide px-4 py-6 max-w-lg mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold">Admin Panel</h2>
+                <button onclick="logoutAdmin()" class="bg-gray-800 px-4 py-2 rounded-full text-sm hover:text-red-500 transition">Logout</button>
+            </div>
+            
+            <div class="bg-gray-900 border border-gray-800 p-5 rounded-2xl shadow mb-6">
+                <h2 class="font-bold text-red-500 mb-3">Upload Movie</h2>
+                <input type="text" id="m-title" placeholder="Movie Title" class="w-full p-3 rounded bg-gray-800 mb-2">
+                <input type="text" id="m-poster" placeholder="Poster URL" class="w-full p-3 rounded bg-gray-800 mb-2">
+                <select id="m-category" class="w-full p-3 rounded bg-gray-800 mb-2"><option value="">Loading Categories...</option></select>
+                <input type="text" id="m-rating" placeholder="Rating (e.g. 8.5)" class="w-full p-3 rounded bg-gray-800 mb-2">
+                <input type="text" id="m-year" placeholder="Release Year" class="w-full p-3 rounded bg-gray-800 mb-2">
+                <input type="text" id="m-link" placeholder="Watch Link URL" class="w-full p-3 rounded bg-gray-800 mb-2">
+                <textarea id="m-desc" placeholder="Description" class="w-full p-3 rounded bg-gray-800 h-24 mb-3"></textarea>
+                <button onclick="addMovie()" class="w-full bg-red-600 p-3 rounded font-bold">Publish Movie</button>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 p-5 rounded-2xl shadow mb-6">
+                <h2 class="font-bold text-blue-500 mb-3">Add Category</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="c-title" placeholder="Category Name" class="flex-1 p-3 rounded bg-gray-800">
+                    <button onclick="addCategory()" class="bg-blue-600 px-4 rounded font-bold">Add</button>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 p-5 rounded-2xl shadow">
+                <h2 class="font-bold text-green-500 mb-3">Add Banner URL</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="b-url" placeholder="Image URL" class="flex-1 p-3 rounded bg-gray-800">
+                    <button onclick="addBanner()" class="bg-green-600 px-4 rounded font-bold">Add</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Admin Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwaiLhz-7aokBRK5vphDYS3QbOKNy4dBA",
+            authDomain: "filmi-office.firebaseapp.com",
+            databaseURL: "https://filmi-office-default-rtdb.firebaseio.com",
+            projectId: "filmi-office",
+            storageBucket: "filmi-office.appspot.com",
+            messagingSenderId: "532165198407",
+            appId: "1:532165198407:web:3c2c6768de0f7fd89d6762"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            if(user) {
+                document.getElementById('view-login').classList.add('hide');
+                document.getElementById('view-dashboard').classList.remove('hide');
+                loadCategories();
+            } else {
+                document.getElementById('view-dashboard').classList.add('hide');
+                document.getElementById('view-login').classList.remove('hide');
+            }
+        });
+
+        window.loginAdmin = async function() {
+            const email = document.getElementById('admin-email').value;
+            const pass = document.getElementById('admin-pass').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (error) { alert("Login failed! Ensure email and password are correct."); }
+        };
+
+        window.logoutAdmin = () => signOut(auth);
+
+        async function loadCategories() {
+            const catsSnap = await getDocs(collection(db, "categories"));
+            const select = document.getElementById('m-category');
+            select.innerHTML = '<option value="">Select Category</option>' + 
+                catsSnap.docs.map(d => `<option value="${d.id}">${d.data().title}</option>`).join('');
+        }
+
+        window.addMovie = async function() {
+            const data = {
+                title: document.getElementById('m-title').value,
+                poster_url: document.getElementById('m-poster').value,
+                category_id: document.getElementById('m-category').value,
+                rating: document.getElementById('m-rating').value,
+                release_year: document.getElementById('m-year').value,
+                watch_link: document.getElementById('m-link').value,
+                description: document.getElementById('m-desc').value
+            };
+            if(!data.title || !data.category_id) return alert("Title and Category required!");
+            await addDoc(collection(db, "movies"), data);
+            alert("Movie Uploaded!");
+            window.location.reload();
+        };
+
+        window.addCategory = async function() {
+            await addDoc(collection(db, "categories"), { title: document.getElementById('c-title').value });
+            alert("Category Added!"); window.location.reload();
+        };
+
+        window.addBanner = async function() {
+            await addDoc(collection(db, "banners"), { image_url: document.getElementById('b-url').value });
+            alert("Banner Added!"); window.location.reload();
+        };
+    </script>
+</body>
+</html>
