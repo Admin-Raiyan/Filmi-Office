@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Filmi Office - Movies & Web Series</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="antialiased">
+
+    <!-- Header -->
+    <header class="bg-[#111827]/90 backdrop-blur-md sticky top-0 z-50 border-b border-gray-800 shadow-lg">
+        <div class="flex justify-between items-center px-5 py-4">
+            <h1 class="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-pink-500 cursor-pointer tracking-wider" onclick="navigate('home')">FILMI OFFICE</h1>
+            <div class="flex gap-5 items-center">
+                <i class="fas fa-search text-xl cursor-pointer text-gray-300 hover:text-white transition" onclick="navigate('search')"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="app-content" class="min-h-[80vh]">
+        <!-- Home View -->
+        <div id="view-home" class="page-view fade-in">
+            <div class="mx-4 mt-4 h-48 md:h-72 rounded-2xl relative overflow-hidden shadow-2xl bg-gray-800">
+                <img id="banner-img" src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1000&auto=format&fit=crop" class="w-full h-full object-cover opacity-80" alt="Banner">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0b0f19] to-transparent"></div>
+                <div class="absolute bottom-4 left-4 text-white">
+                    <span class="bg-red-600 text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wide">Trending</span>
+                    <h2 class="text-xl font-bold mt-2 text-shadow">Welcome to Filmi Office</h2>
+                </div>
+            </div>
+            
+            <div id="categories-container" class="mt-6 px-4 space-y-8">
+                <div class="flex flex-col items-center justify-center mt-20 text-gray-500">
+                    <i class="fas fa-spinner fa-spin text-4xl mb-4 text-red-500"></i>
+                    <p>Loading amazing content...</p>
+                </div>
+            </div>
+
+            <footer class="mt-16 border-t border-gray-800 pt-8 pb-6 px-4 text-center">
+                <h2 class="text-lg font-bold text-gray-300 mb-2">Filmi Office</h2>
+                <p class="text-xs text-gray-500 mb-6">Your ultimate destination for movies.</p>
+                <a href="admin.html" class="text-sm text-gray-400 hover:text-red-500 transition flex items-center justify-center gap-2 mx-auto bg-gray-900 w-40 py-2 rounded-full border border-gray-800">
+                    <i class="fas fa-user-shield"></i> Admin Login
+                </a>
+            </footer>
+        </div>
+
+        <!-- Categories View -->
+        <div id="view-categories" class="page-view hide px-4 py-6">
+            <h2 class="text-2xl font-bold mb-6 border-l-4 border-red-500 pl-3">All Categories</h2>
+            <div id="user-cat-list" class="grid grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- Search View -->
+        <div id="view-search" class="page-view hide px-4 py-6">
+            <div class="relative mb-6">
+                <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
+                <input type="text" id="search-input" placeholder="Search movies..." class="w-full py-3 pl-12 pr-4 rounded-xl bg-gray-800/50 text-white border border-gray-700 focus:border-red-500 outline-none">
+            </div>
+            <div id="search-results" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </div>
+
+        <!-- Movie Details View -->
+        <div id="view-movie-details" class="page-view hide">
+            <div id="details-content" class="pb-10"></div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav id="bottom-nav" class="fixed bottom-0 w-full bg-[#111827]/95 backdrop-blur-lg border-t border-gray-800 flex justify-around py-3 z-50 rounded-t-2xl">
+        <div class="bottom-nav-item flex flex-col items-center cursor-pointer text-gray-400" id="nav-home" onclick="navigate('home')">
+            <i class="fas fa-home text-xl mb-1"></i><span class="text-[10px] uppercase tracking-wider">Home</span>
+        </div>
+        <div class="bottom-nav-item flex flex-col items-center cursor-pointer text-gray-400" id="nav-search" onclick="navigate('search')">
+            <i class="fas fa-search text-xl mb-1"></i><span class="text-[10px] uppercase tracking-wider">Search</span>
+        </div>
+        <div class="bottom-nav-item flex flex-col items-center cursor-pointer text-gray-400" id="nav-categories" onclick="navigate('categories')">
+            <i class="fas fa-layer-group text-xl mb-1"></i><span class="text-[10px] uppercase tracking-wider">Categories</span>
+        </div>
+    </nav>
+
+    <!-- Adsterra Script -->
+    <script src="assets/js/ads.js"></script>
+
+    <!-- Firebase App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwaiLhz-7aokBRK5vphDYS3QbOKNy4dBA",
+            authDomain: "filmi-office.firebaseapp.com",
+            databaseURL: "https://filmi-office-default-rtdb.firebaseio.com",
+            projectId: "filmi-office",
+            storageBucket: "filmi-office.appspot.com",
+            messagingSenderId: "532165198407",
+            appId: "1:532165198407:web:3c2c6768de0f7fd89d6762"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let globalCategories = [], globalMovies = [], globalBanners = [];
+
+        window.navigate = function(viewId, dataId = null) {
+            document.querySelectorAll('.page-view').forEach(el => el.classList.add('hide'));
+            document.getElementById(`view-${viewId}`).classList.remove('hide');
+            window.scrollTo(0,0);
+
+            const bottomNav = document.getElementById('bottom-nav');
+            if(viewId === 'movie-details') {
+                bottomNav.style.display = 'none';
+            } else {
+                bottomNav.style.display = 'flex';
+                document.querySelectorAll('.bottom-nav-item').forEach(el => el.classList.replace('text-red-500', 'text-gray-400'));
+                document.getElementById(`nav-${viewId}`)?.classList.replace('text-gray-400', 'text-red-500');
+            }
+
+            if(viewId === 'home') loadHome();
+            if(viewId === 'categories') loadCats();
+            if(viewId === 'movie-details') loadDetails(dataId);
+        };
+
+        async function fetchAll() {
+            if(globalMovies.length === 0) {
+                const [cats, movs, bans] = await Promise.all([
+                    getDocs(collection(db, "categories")), getDocs(collection(db, "movies")), getDocs(collection(db, "banners"))
+                ]);
+                globalCategories = cats.docs.map(d => ({id: d.id, ...d.data()}));
+                globalMovies = movs.docs.map(d => ({id: d.id, ...d.data()}));
+                globalBanners = bans.docs.map(d => ({id: d.id, ...d.data()}));
+            }
+        }
+
+        async function loadHome() {
+            await fetchAll();
+            if(globalBanners.length > 0) document.getElementById('banner-img').src = globalBanners[0].image_url;
+            
+            const cont = document.getElementById('categories-container');
+            if(globalCategories.length === 0) {
+                cont.innerHTML = `<p class="text-center text-gray-500 mt-10">No content found.</p>`; return;
+            }
+            cont.innerHTML = '';
+            globalCategories.forEach(cat => {
+                const movs = globalMovies.filter(m => m.category_id === cat.id);
+                if(movs.length === 0) return;
+                
+                let html = movs.map(m => `
+                    <div class="flex-none w-[110px] md:w-[150px] cursor-pointer poster-card" onclick="navigate('movie-details', '${m.id}')">
+                        <div class="w-full h-[160px] md:h-[220px] rounded-xl overflow-hidden relative">
+                            <img src="${m.poster_url}" class="w-full h-full object-cover">
+                            <div class="absolute top-1 right-1 bg-black/70 text-yellow-500 text-[10px] px-1.5 rounded"><i class="fas fa-star"></i> ${m.rating}</div>
+                        </div>
+                        <p class="text-xs md:text-sm font-semibold text-center mt-1 truncate">${m.title}</p>
+                    </div>`).join('');
+                
+                cont.innerHTML += `<div class="mb-8"><h3 class="text-lg font-bold border-l-4 border-red-500 pl-3 mb-4">${cat.title}</h3><div class="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x">${html}</div></div>`;
+            });
+        }
+
+        async function loadCats() {
+            await fetchAll();
+            document.getElementById('user-cat-list').innerHTML = globalCategories.map(c => `<div class="bg-gray-800 p-6 rounded-xl text-center"><i class="fas fa-folder text-3xl text-red-500 mb-2"></i><h3 class="font-bold">${c.title}</h3></div>`).join('');
+        }
+
+        async function loadDetails(id) {
+            const m = globalMovies.find(x => x.id === id);
+            document.getElementById('details-content').innerHTML = `
+                <div class="relative w-full h-[60vh]">
+                    <img src="${m.poster_url}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#0b0f19] to-transparent"></div>
+                    <button onclick="navigate('home')" class="absolute top-4 left-4 bg-black/50 text-white w-10 h-10 rounded-full"><i class="fas fa-arrow-left"></i></button>
+                    <div class="absolute bottom-0 p-6 w-full">
+                        <h2 class="text-3xl font-black mb-3 text-shadow">${m.title}</h2>
+                        <div class="flex gap-3 text-sm text-gray-300 mb-6">
+                            <span class="bg-gray-800 px-3 py-1 rounded">⭐ ${m.rating}</span>
+                            <span class="bg-gray-800 px-3 py-1 rounded">📅 ${m.release_year}</span>
+                        </div>
+                        <a href="${m.watch_link}" target="_blank" class="block bg-red-600 text-white font-bold py-4 rounded-xl text-center uppercase tracking-wide shadow-lg"><i class="fas fa-play-circle mr-2 text-xl"></i> Play Movie</a>
+                    </div>
+                </div>
+                <div class="p-6"><h3 class="text-xl font-bold mb-3 border-b border-gray-800 pb-2">Storyline</h3><p class="text-gray-400 text-sm">${m.description}</p></div>`;
+        }
+
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            const res = globalMovies.filter(m => m.title.toLowerCase().includes(val));
+            document.getElementById('search-results').innerHTML = res.map(m => `
+                <div class="cursor-pointer bg-gray-900 rounded-xl overflow-hidden" onclick="navigate('movie-details', '${m.id}')">
+                    <img src="${m.poster_url}" class="w-full h-40 object-cover">
+                    <p class="text-sm font-bold text-center p-2 truncate">${m.title}</p>
+                </div>`).join('');
+        });
+
+        window.onload = () => navigate('home');
+    </script>
+</body>
+</html>
